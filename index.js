@@ -11,11 +11,10 @@ const app = express();
 
 // CORS options
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:3000", // Use environment variable for React app URL
+  origin: process.env.CLIENT_URL || "https://tms-tau-three.vercel.app/", // Use environment variable for React app URL
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true, // Enable credentials (cookies, headers)
 };
-
 // Middleware
 app.use(cors(corsOptions)); // Apply CORS middleware globally
 app.use(express.json());
