@@ -10,11 +10,25 @@ const cors = require("cors");
 const app = express();
 
 // CORS options
+const allowedOrigins = [
+  process.env.CLIENT_URL || "https://tms-tau-three.vercel.app/", // Default URL or from env variable
+  "https://tms-5qvb1kih1-akshay124-pixels-projects.vercel.app", // Add the new frontend origin
+];
+
+// Middleware to handle CORS dynamically based on the allowed origins
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "https://tms-tau-three.vercel.app/", // Use environment variable for React app URL
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) {
+      // Allow requests with no origin (like mobile apps)
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true, // Enable credentials (cookies, headers)
 };
+
 // Middleware
 app.use(cors(corsOptions)); // Apply CORS middleware globally
 app.use(express.json());
