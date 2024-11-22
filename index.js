@@ -9,32 +9,23 @@ const cors = require("cors");
 
 const app = express();
 
-// CORS options
-const allowedOrigins = [
-  process.env.CLIENT_URL || "https://tms-tau-three.vercel.app/", // Default URL or from env variable
-  "https://tms-5qvb1kih1-akshay124-pixels-projects.vercel.app", // Add the new frontend origin
-];
-
-// Middleware to handle CORS dynamically based on the allowed origins
+// Middleware to handle CORS for all origins
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (allowedOrigins.includes(origin) || !origin) {
-      // Allow requests with no origin (like mobile apps)
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true, // Enable credentials (cookies, headers)
+  origin: "*", // Allows all origins
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allowed HTTP methods
+  credentials: true, // Allow credentials (cookies, etc.)
 };
 
-// Middleware
-app.use(cors(corsOptions)); // Apply CORS middleware globally
+// Apply CORS middleware globally
+app.use(cors(corsOptions));
+
+// Middleware to handle preflight OPTIONS requests
+app.options("*", cors(corsOptions)); // Allow preflight requests for all routes
+
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Logging Middleware (optional, useful for debugging)
+// Logging Middleware (useful for debugging)
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
