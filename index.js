@@ -9,9 +9,20 @@ const cors = require("cors");
 
 const app = express();
 
-// Middleware to handle CORS for all origins
+// Middleware to handle CORS with specific origins and credentials
 const corsOptions = {
-  origin: "*", // Allows all origins
+  origin: (origin, callback) => {
+    // If the origin is not provided (for mobile apps or local requests), allow the request
+    if (
+      !origin ||
+      origin.includes("localhost") ||
+      origin.includes("https://tms-tau-three.vercel.app")
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allowed HTTP methods
   credentials: true, // Allow credentials (cookies, etc.)
 };
