@@ -26,6 +26,10 @@ router.post("/create", validateTicket, async (req, res) => {
 
     const trackingId = generateTrackingId();
 
+    // Calculate initial TAT category (for a newly created ticket, it will be "0-2 days")
+    const createdDate = new Date();
+    let tat = "0-2 days";
+
     const ticket = new Ticket({
       customerName,
       serialNumber,
@@ -41,6 +45,8 @@ router.post("/create", validateTicket, async (req, res) => {
       trackingId,
       call: "Select Call",
       status: "Open",
+      tat,
+      createdAt: createdDate, // Automatically handled by mongoose's timestamps
     });
 
     await ticket.save();

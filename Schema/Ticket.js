@@ -6,7 +6,7 @@ const TicketSchema = new mongoose.Schema(
     serialNumber: { type: String, required: true },
     description: { type: String, required: true },
     email: { type: String, required: true },
-    contactNumber: { type: String, required: true }, // Example regex for 10-digit numbers
+    contactNumber: { type: String, required: true },
     billNumber: { type: String, required: true },
     city: { type: String, required: true },
     state: { type: String, required: true },
@@ -63,11 +63,10 @@ const TicketSchema = new mongoose.Schema(
         },
         username: {
           type: String,
-          // Ensures the action is always traceable to a user
         },
         remarks: {
           type: String,
-          default: "No remarks provided", // Ensures a default message if none is given
+          default: "No remarks provided",
         },
         date: { type: Date, default: Date.now },
       },
@@ -76,23 +75,42 @@ const TicketSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Function to categorize TAT
+TicketSchema.methods.getTATCategory = function () {
+  const createdAt = this.createdAt;
+  const updatedAt = this.updatedAt || new Date(); // Default to current time if no updatedAt
+
+  const timeDiff = updatedAt - createdAt; // Difference in milliseconds
+  const days = timeDiff / (1000 * 3600 * 24); // Convert milliseconds to days
+
+  if (days <= 2) {
+    return "0 to 2 days";
+  } else if (days >= 3 && days <= 4) {
+    return "3 to 4 days";
+  } else if (days >= 5 && days <= 8) {
+    return "5 to 8 days";
+  } else if (days >= 14) {
+    return "14 days or more";
+  } else {
+    return "Unknown"; // If the status is still open, or no closed date
+  }
+};
+
 // Middleware to initialize history and record updates
 TicketSchema.pre("save", function (next) {
   if (this.isNew) {
-    // New ticket creation
     this.history.push({
       status: this.status,
       username: this.username || "System", // Default to "System" if no username
       date: new Date(),
     });
   } else {
-    // Status change or update
     if (this.isModified("status")) {
       const lastHistory = this.history[this.history.length - 1];
       if (this.status !== lastHistory?.status) {
         this.history.push({
           status: this.status,
-          username: this.username || "System", // Use username from ticket schema
+          username: this.username || "System",
           date: new Date(),
         });
       }
