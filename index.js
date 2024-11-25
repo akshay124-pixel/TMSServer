@@ -12,15 +12,15 @@ const app = express();
 // Middleware to handle CORS with specific origins and credentials
 const corsOptions = {
   origin: (origin, callback) => {
-    // If the origin is not provided (for mobile apps or local requests), allow the request
+    // Allow requests from localhost, vercel app, or no origin (e.g., mobile apps or direct requests)
     if (
-      !origin ||
-      origin.includes("localhost") ||
-      origin.includes("https://tms-tau-three.vercel.app")
+      !origin || // If there's no origin (like mobile apps or requests from Postman)
+      origin.includes("localhost") || // If the origin includes localhost (for local development)
+      origin.includes("https://tms-tau-three.vercel.app") // Allow requests from your deployed frontend URL
     ) {
-      callback(null, true);
+      callback(null, true); // Allow the request
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error("Not allowed by CORS")); // Reject requests from other origins
     }
   },
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allowed HTTP methods
@@ -33,8 +33,8 @@ app.use(cors(corsOptions));
 // Middleware to handle preflight OPTIONS requests
 app.options("*", cors(corsOptions)); // Allow preflight requests for all routes
 
-app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(express.json()); // Parse incoming JSON requests
+app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve static files from the uploads folder
 
 // Logging Middleware (useful for debugging)
 app.use((req, res, next) => {
@@ -43,8 +43,8 @@ app.use((req, res, next) => {
 });
 
 // Define routes
-app.use("/auth", LoginRoute);
-app.use("/user", SignupRoute);
+app.use("/auth", LoginRoute); // Login route
+app.use("/user", SignupRoute); // Signup route
 app.use("/tickets", ticketsRoutes); // Tickets route
 app.use("/user", profileRoute); // User profile route
 
@@ -64,10 +64,10 @@ app.use((err, req, res, next) => {
 // Database connection and server start
 dbconnect()
   .then(() => {
-    const port = process.env.PORT || 5000;
-    app.listen(port, () => console.log(`App listening on port ${port}!`));
+    const port = process.env.PORT || 5000; // Set port for the server
+    app.listen(port, () => console.log(`App listening on port ${port}!`)); // Start the server
   })
   .catch((err) => {
-    console.error("Database connection failed:", err);
-    process.exit(1);
+    console.error("Database connection failed:", err); // Log database connection failure
+    process.exit(1); // Exit the application if database connection fails
   });
