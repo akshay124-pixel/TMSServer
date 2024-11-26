@@ -42,7 +42,10 @@ const TicketSchema = new mongoose.Schema(
       enum: ["Open", "In Progress", "Resolved", "Closed"],
       default: "Open",
     },
-    assignedTo: { type: String },
+    assignedTo: {
+      type: String,
+      default: "Not Assigned", // Default value for unassigned tickets
+    },
     priority: {
       type: String,
       enum: ["Low", "Normal", "High"],

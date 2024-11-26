@@ -97,7 +97,7 @@ router.put("/update/:id", async (req, res) => {
     const { status, assignedTo, priority, call, remarks, partName, Type } =
       req.body;
 
-    // Check if the provided ID is valid
+    // Validate the ticket ID
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: "Invalid ticket ID" });
     }
@@ -113,7 +113,7 @@ router.put("/update/:id", async (req, res) => {
     // Object to track changes
     const changes = {};
 
-    // Only track changes for status and remarks
+    // Track changes for `status` and `remarks` (these go to history)
     if (status && ticket.status !== status) {
       changes.status = status;
       ticket.status = status;
@@ -126,8 +126,8 @@ router.put("/update/:id", async (req, res) => {
       historyChanges = true;
     }
 
-    // Update other fields (these will not push to history)
-    if (call && ticket.call !== call) {
+    // Update other fields (these won't push to history)
+    if (call !== undefined && ticket.call !== call) {
       ticket.call = call;
     }
 
@@ -143,22 +143,23 @@ router.put("/update/:id", async (req, res) => {
       ticket.priority = priority;
     }
 
+    // Handle `assignedTo` updates (set to "Not Assigned" if null/empty)
     if (assignedTo !== undefined) {
       if (ticket.assignedTo !== assignedTo) {
-        ticket.assignedTo = assignedTo;
+        ticket.assignedTo = assignedTo || "Not Assigned";
       }
     }
 
-    // If status or remarks were updated, push changes to history
+    // Push changes to history only for `status` and `remarks`
     if (historyChanges) {
       ticket.history.push({
         ...changes,
-        username: ticket.username,
+        username: req.username, // Replace with actual username from auth
         date: new Date(),
       });
     }
 
-    // Save the updated ticket to the database
+    // Save the updated ticket
     await ticket.save();
 
     return res.json(ticket);
