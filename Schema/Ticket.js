@@ -16,14 +16,11 @@ const TicketSchema = new mongoose.Schema(
     assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     productType: {
       type: String,
-      enum: ["Product A", "Product B", "Product C"],
-      default: "Product A",
       required: true,
     },
     modelType: {
       type: String,
-      enum: ["Model A", "Model B", "Model C"],
-      default: "Model A",
+
       required: true,
     },
     Type: {
@@ -34,8 +31,8 @@ const TicketSchema = new mongoose.Schema(
     address: { type: String, required: true },
     call: {
       type: String,
-      enum: ["Select Call", "Hardware Call", "Software Call"],
-      default: "Select Call",
+      enum: ["Hardware Call", "Software Call"],
+      default: "Hardware Call",
     },
     status: {
       type: String,
@@ -46,6 +43,7 @@ const TicketSchema = new mongoose.Schema(
       type: String,
       default: "Not Assigned", // Default value for unassigned tickets
     },
+
     priority: {
       type: String,
       enum: ["Low", "Normal", "High"],
@@ -78,7 +76,6 @@ const TicketSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Function to categorize TAT
 TicketSchema.methods.getTATCategory = function () {
   const createdAt = this.createdAt;
   const updatedAt = this.updatedAt || new Date(); // Default to current time if no updatedAt
@@ -88,14 +85,17 @@ TicketSchema.methods.getTATCategory = function () {
 
   if (days <= 2) {
     return "0 to 2 days";
-  } else if (days >= 3 && days <= 4) {
-    return "3 to 4 days";
-  } else if (days >= 5 && days <= 8) {
-    return "5 to 8 days";
-  } else if (days >= 14) {
+  } else if (days >= 3 && days <= 7) {
+    // Changed range to 3-7
+    return "3 to 7 days";
+  } else if (days >= 8 && days <= 14) {
+    // Changed range to 8-14
+    return "8 to 14 days";
+  } else if (days > 14) {
+    // Corrected condition for >14
     return "14 days or more";
   } else {
-    return "Unknown"; // If the status is still open, or no closed date
+    return "Unknown"; // If the status is still open or no closed date
   }
 };
 

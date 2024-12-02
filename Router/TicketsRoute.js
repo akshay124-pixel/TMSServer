@@ -43,7 +43,7 @@ router.post("/create", validateTicket, async (req, res) => {
       city,
       state,
       trackingId,
-      call: "Select Call",
+      call: "Hardware Call",
       status: "Open",
       tat,
       createdAt: createdDate, // Automatically handled by mongoose's timestamps
@@ -91,7 +91,7 @@ router.get("/ticket/search", async (req, res) => {
   }
 });
 
-// Update Route
+// Update
 router.put("/update/:id", async (req, res) => {
   try {
     const { status, assignedTo, priority, call, remarks, partName, Type } =
