@@ -5,7 +5,8 @@ const router = express.Router();
 const { verifyToken } = require("../utils/config jwt");
 const mongoose = require("mongoose");
 const validateTicket = require("../Middleware/validate-middleware");
-
+const Feedback = require("../Schema/Feedback");
+// const Feedback = require("../Schema/Feedback");
 // Route to create a new ticket
 router.post("/create", validateTicket, async (req, res) => {
   try {
@@ -166,6 +167,54 @@ router.put("/update/:id", async (req, res) => {
   } catch (error) {
     console.error("Error updating ticket:", error);
     res.status(500).json({ error: "Failed to update ticket" });
+  }
+});
+// Feedback Route
+router.post("/:ticketId/feedback", async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { rating, comments } = req.body;
+
+    // Validate feedback data
+    if (!rating || !comments) {
+      return res
+        .status(400)
+        .json({ error: "Rating and comments are required." });
+    }
+
+    // Save the feedback to the database
+    const feedback = new Feedback({
+      ticketId,
+      rating,
+      comments,
+    });
+
+    await feedback.save();
+
+    res.status(201).json({ message: "Feedback submitted successfully!" });
+  } catch (error) {
+    console.error("Error submitting feedback:", error);
+    res.status(500).json({ error: "Failed to submit feedback." });
+  }
+});
+
+// Route for submitting feedback
+
+// Get Feedback for a specific ticket
+// Fetch feedback for a specific trackingId
+router.get("/:ticketId/feedback", async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const feedback = await Feedback.findOne({ ticketId });
+
+    if (!feedback) {
+      return res.status(404).json({ message: "Feedback not found" });
+    }
+
+    res.status(200).json(feedback);
+  } catch (error) {
+    console.error("Error fetching feedback:", error);
+    res.status(500).json({ message: "Server Error", error });
   }
 });
 
