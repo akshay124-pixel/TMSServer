@@ -12,14 +12,24 @@ const app = express();
 
 // CORS options
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:3000", // Use environment variable for React app URL
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      "http://localhost:3000", // Local development URL
+      "https://tms-tau-three.vercel.app", // Deployed client URL
+    ];
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true); // Allow request
+    } else {
+      callback(new Error("Not allowed by CORS")); // Block request
+    }
+  },
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true, // Enable credentials (cookies, headers)
 };
 
 // Middleware
 app.use(cors(corsOptions)); // Apply CORS middleware globally
-
 app.use(express.json()); // Middleware to parse JSON bodies
 
 // Logging Middleware (optional, useful for debugging)
@@ -32,8 +42,8 @@ app.use((req, res, next) => {
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Define routes
-app.use("/auth", LoginRoute);
-app.use("/user", SignupRoute);
+app.use("/auth", LoginRoute); // Login route
+app.use("/user", SignupRoute); // Signup route
 app.use("/tickets", ticketsRoutes); // Tickets route
 app.use("/user", profileRoute); // User profile route
 
