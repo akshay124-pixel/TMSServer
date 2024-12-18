@@ -26,9 +26,9 @@ const ValidticketSchema = z.object({
     message: "Contact Number must be exactly 10 digits",
   }),
 
-  // billImage: z.string().regex(/\.(jpg|jpeg|png|gif)$/i, {
-  //   message: "Bill Image must be a valid image format (JPG, JPEG, PNG, GIF)",
-  // }),
+  billImage: z.string().regex(/\.(jpg|jpeg|png|gif)$/i, {
+    message: "Bill Image must be a valid image format (JPG, JPEG, PNG, GIF)",
+  }),
 
   email: z
     .string()
