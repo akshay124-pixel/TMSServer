@@ -6,57 +6,110 @@ const { verifyToken } = require("../utils/config jwt");
 const mongoose = require("mongoose");
 const validateTicket = require("../Middleware/validate-middleware");
 const Feedback = require("../Schema/Feedback");
-// const Feedback = require("../Schema/Feedback");
-// Route to create a new ticket
-router.post("/create", validateTicket, async (req, res) => {
-  try {
-    // Access validated data
-    const {
-      customerName,
-      serialNumber,
-      description,
-      contactNumber,
-      billNumber,
-      email,
-      productType,
-      modelType,
-      address,
-      city,
-      state,
-    } = req.validatedData;
-
-    const trackingId = generateTrackingId();
-
-    // Calculate initial TAT category (for a newly created ticket, it will be "0-2 days")
-    const createdDate = new Date();
-    let tat = "0-2 days";
-
-    const ticket = new Ticket({
-      customerName,
-      serialNumber,
-      description,
-      contactNumber,
-      billNumber,
-      email,
-      productType,
-      modelType,
-      address,
-      city,
-      state,
-      trackingId,
-      call: "Hardware Call",
-      status: "Open",
-      tat,
-      createdAt: createdDate, // Automatically handled by mongoose's timestamps
-    });
-
-    await ticket.save();
-    res.status(201).json(ticket);
-  } catch (error) {
-    console.error("Error creating ticket:", error);
-    res.status(500).json({ error: "Failed to create ticket" });
-  }
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+// Multer storage configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Ensure this directory exists
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Append timestamp to the filename
+  },
 });
+
+// Multer upload configuration
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const fileTypes = /jpeg|jpg|png|gif/;
+    const extName = fileTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    const mimeType = fileTypes.test(file.mimetype);
+
+    if (extName && mimeType) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only images are allowed!"));
+    }
+  },
+});
+
+// Download route
+router.get("/download/:filename", (req, res) => {
+  const { filename } = req.params;
+
+  // Define the uploads directory
+  const directoryPath = path.join(__dirname, "../uploads");
+  const filePath = path.join(directoryPath, filename);
+
+  // Check if the file exists
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error("File not found at:", filePath);
+      return res.status(404).json({ message: "File not found." });
+    }
+
+    // Send the file for download with a clean file name
+    res.download(filePath, filename, (err) => {
+      if (err) {
+        console.error("Error sending file:", err.message);
+        return res.status(500).json({ message: "Failed to download file." });
+      }
+    });
+  });
+});
+
+// Route to create a new ticket
+router.post(
+  "/create",
+  upload.single("billImage"),
+  validateTicket,
+  async (req, res) => {
+    try {
+      const {
+        customerName,
+        serialNumber,
+        description,
+        contactNumber,
+        email,
+        productType,
+        modelType,
+        address,
+        city,
+        state,
+      } = req.body;
+      const billImage = req.file.path;
+      const trackingId = generateTrackingId();
+
+      const ticket = new Ticket({
+        customerName,
+        serialNumber,
+        description,
+        contactNumber,
+        billImage,
+        email,
+        productType,
+        modelType,
+        address,
+        city,
+        state,
+        trackingId,
+        call: "Hardware Call",
+        status: "Open",
+      });
+
+      await ticket.save();
+      res.status(201).json(ticket);
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+      res.status(500).json({ error: "Failed to create ticket" });
+    }
+  }
+);
 
 // Route to fetch all tickets
 router.get("/ticket", async (req, res) => {
