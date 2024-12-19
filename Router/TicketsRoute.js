@@ -4,25 +4,18 @@ const Ticket = require("../Schema/Ticket");
 const router = express.Router();
 const { verifyToken } = require("../utils/config jwt");
 const mongoose = require("mongoose");
-const { v4: uuidv4 } = require("uuid");
 const validateTicket = require("../Middleware/validate-middleware");
 const Feedback = require("../Schema/Feedback");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, "../uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
 // Multer storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    cb(null, "uploads/"); // Ensure this directory exists
   },
   filename: (req, file, cb) => {
-    cb(null, uuidv4() + path.extname(file.originalname)); // Unique filename using UUID
+    cb(null, Date.now() + path.extname(file.originalname)); // Append timestamp to the filename
   },
 });
 
@@ -40,7 +33,7 @@ const upload = multer({
     if (extName && mimeType) {
       cb(null, true);
     } else {
-      cb(new Error("Only JPEG, JPG, PNG, or GIF images are allowed!"));
+      cb(new Error("Only images are allowed!"));
     }
   },
 });
@@ -48,22 +41,24 @@ const upload = multer({
 // Download route
 router.get("/download/:filename", (req, res) => {
   const { filename } = req.params;
-  const filePath = path.join(uploadDir, filename);
 
-  console.log("File being requested:", filePath);
+  // Define the uploads directory
+  const directoryPath = path.join(__dirname, "../uploads");
+  const filePath = path.join(directoryPath, filename);
 
+  // Check if the file exists
   fs.access(filePath, fs.constants.F_OK, (err) => {
     if (err) {
-      console.error(`File not found: ${filePath}`);
+      console.error("File not found at:", filePath);
       return res.status(404).json({ message: "File not found." });
     }
 
+    // Send the file for download with a clean file name
     res.download(filePath, filename, (err) => {
       if (err) {
-        console.error(`Error while downloading file: ${err.message}`);
+        console.error("Error sending file:", err.message);
         return res.status(500).json({ message: "Failed to download file." });
       }
-      console.log("File successfully downloaded:", filePath);
     });
   });
 });
@@ -87,11 +82,8 @@ router.post(
         city,
         state,
       } = req.body;
-
-      console.log("Uploaded file details:", req.file);
-
       const billImage = req.file.path;
-      const trackingId = uuidv4(); // Generate unique tracking ID
+      const trackingId = generateTrackingId();
 
       const ticket = new Ticket({
         customerName,
@@ -111,7 +103,6 @@ router.post(
       });
 
       await ticket.save();
-      console.log("New ticket created with ID:", ticket._id);
       res.status(201).json(ticket);
     } catch (error) {
       console.error("Error creating ticket:", error);
