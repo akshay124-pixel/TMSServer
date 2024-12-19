@@ -19,21 +19,21 @@ const storage = multer.diskStorage({
   },
 });
 
-// Multer upload configuration
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
-    const fileTypes = /jpeg|jpg|png|gif/;
+    // Allowed file types: images and PDFs
+    const fileTypes = /jpeg|jpg|png|gif|pdf/; // Added 'pdf'
     const extName = fileTypes.test(
       path.extname(file.originalname).toLowerCase()
     );
     const mimeType = fileTypes.test(file.mimetype);
 
     if (extName && mimeType) {
-      cb(null, true);
+      cb(null, true); // Accept file
     } else {
-      cb(new Error("Only images are allowed!"));
+      cb(new Error("Only images and PDFs are allowed!")); // Reject file
     }
   },
 });
