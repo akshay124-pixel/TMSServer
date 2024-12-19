@@ -417,7 +417,8 @@ router.get("/role/:role", verifyToken, async (req, res) => {
 
 // Function to generate a unique tracking ID
 function generateTrackingId() {
-  return `TICKET-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const randomPart = Math.floor(1000000 + Math.random() * 9000000);
+  return `TICKET-${randomPart}`;
 }
 
 module.exports = router;
