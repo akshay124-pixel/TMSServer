@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const TicketSchema = new mongoose.Schema(
   {
     customerName: { type: String, required: true },
-    contactPerson: { type: String, required: true },
+    organization: { type: String },
     serialNumber: { type: String, required: true },
     description: { type: String, required: true },
     email: { type: String, required: true },

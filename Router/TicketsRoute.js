@@ -72,7 +72,7 @@ router.post(
     try {
       const {
         customerName,
-        contactPerson,
+        organization,
         serialNumber,
         description,
         contactNumber,
@@ -88,7 +88,7 @@ router.post(
 
       const ticket = new Ticket({
         customerName,
-        contactPerson,
+        organization,
         serialNumber,
         description,
         contactNumber,
