@@ -37,6 +37,37 @@ const upload = multer({
     }
   },
 });
+// Exports
+router.get("/export", async (req, res) => {
+  try {
+    const tickets = await Ticket.find(); // Fetch all tickets from DB
+
+    const fields = [
+      "trackingId",
+      "customerName",
+      "serialNumber",
+      "description",
+      "contactNumber",
+      "email",
+      "productType",
+      "modelType",
+      "address",
+      "city",
+      "state",
+      "status",
+    ];
+
+    const json2csvParser = new Parser({ fields });
+    const csv = json2csvParser.parse(tickets);
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("tickets.csv");
+    res.send(csv);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error exporting tickets");
+  }
+});
 
 // Download route
 router.get("/download/:filename", (req, res) => {
