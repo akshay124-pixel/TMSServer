@@ -9,7 +9,7 @@ const ValidticketSchema = z.object({
       message: "Customer Name must only contain alphabets",
     }),
 
-  serialNumber: z.string().optional(), // No length, format, or uniqueness constraints
+  // serialNumber: z.string().optional(), // No length, format, or uniqueness constraints
 
   description: z
     .string()
