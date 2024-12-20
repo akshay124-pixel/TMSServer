@@ -9,13 +9,7 @@ const ValidticketSchema = z.object({
       message: "Customer Name must only contain alphabets",
     }),
 
-  // serialNumber: z
-  //   .string()
-  //   .length(12, { message: "Serial Number must be exactly 12 characters long" })
-  //   .regex(/^[A-Z0-9]+$/, {
-  //     message:
-  //       "Serial Number must be alphanumeric (uppercase letters and digits only)",
-  //   }),
+  serialNumber: z.string().optional(), // No length, format, or uniqueness constraints
 
   description: z
     .string()
