@@ -37,10 +37,11 @@ const upload = multer({
     }
   },
 });
+
 // Exports
 router.get("/export", async (req, res) => {
   try {
-    const tickets = await Ticket.find(); // Fetch all tickets from DB
+    const tickets = await Ticket.find();
 
     const fields = [
       "trackingId",
