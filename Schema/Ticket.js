@@ -4,7 +4,7 @@ const TicketSchema = new mongoose.Schema(
   {
     customerName: { type: String, required: true },
     organization: { type: String },
-    serialNumber: { type: String },
+    serialNumber: { type: String, default: "N/A" },
     description: { type: String, required: true },
     email: { type: String, required: true },
     contactNumber: { type: Number, required: true },
