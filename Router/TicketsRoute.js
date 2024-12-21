@@ -57,6 +57,10 @@ router.get("/export", async (req, res) => {
       "city",
       "state",
       "status",
+      "call",
+      "Type",
+      "assignedTo",
+      "remarks",
     ];
 
     const json2csvParser = new Parser({ fields });
