@@ -101,28 +101,30 @@ router.get("/export", async (req, res) => {
   }
 });
 // Download route
-router.get("/download/:filename", (req, res) => {
+router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params;
 
-  // Define the uploads directory
-  const directoryPath = path.join(__dirname, "../uploads");
-  const filePath = path.join(directoryPath, filename);
+  try {
+    const resources = await cloudinary.api.resources({
+      type: "upload",
+      prefix: "uploads",
+    });
 
-  // Check if the file exists
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      console.error("File not found at:", filePath);
+    // Find the file by its filename
+    const file = resources.resources.find((resource) =>
+      resource.public_id.endsWith(filename.replace(/\.[^/.]+$/, ""))
+    );
+
+    if (!file) {
+      console.error("File not found:", filename);
       return res.status(404).json({ message: "File not found." });
     }
 
-    // Send the file for download with a clean file name
-    res.download(filePath, filename, (err) => {
-      if (err) {
-        console.error("Error sending file:", err.message);
-        return res.status(500).json({ message: "Failed to download file." });
-      }
-    });
-  });
+    res.redirect(file.secure_url);
+  } catch (error) {
+    console.error("Error fetching file from Cloudinary:", error.message);
+    res.status(500).json({ message: "Failed to download file." });
+  }
 });
 
 // Route to create a new ticket
