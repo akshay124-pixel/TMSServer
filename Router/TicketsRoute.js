@@ -42,10 +42,18 @@ const upload = multer({
 // Exports
 router.get("/export", async (req, res) => {
   try {
-    const tickets = await Ticket.find();
+    const tickets = await Ticket.find(); // Fetch all tickets from DB
+
+    // Format createdAt field in each ticket
+    const formattedTickets = tickets.map((ticket) => {
+      return {
+        ...ticket._doc, // Spread other fields
+        createdAt: new Date(ticket.createdAt).toLocaleDateString("en-US"), // Format to MM/DD/YYYY
+      };
+    });
 
     const fields = [
-      "date",
+      "createdAt",
       "trackingId",
       "customerName",
       "serialNumber",
@@ -65,7 +73,7 @@ router.get("/export", async (req, res) => {
     ];
 
     const json2csvParser = new Parser({ fields });
-    const csv = json2csvParser.parse(tickets);
+    const csv = json2csvParser.parse(formattedTickets); // Use formattedTickets here
 
     res.header("Content-Type", "text/csv");
     res.attachment("tickets.csv");
@@ -75,7 +83,6 @@ router.get("/export", async (req, res) => {
     res.status(500).send("Error exporting tickets");
   }
 });
-
 // Download route
 router.get("/download/:filename", (req, res) => {
   const { filename } = req.params;
