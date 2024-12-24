@@ -101,29 +101,19 @@ router.get("/export", async (req, res) => {
   }
 });
 // Download route
+// Download route
 router.get("/download/:filename", async (req, res) => {
-  const { filename } = req.params;
+  const { filename } = req.params; // This should be the public_id of the file in Cloudinary.
 
   try {
-    const resources = await cloudinary.api.resources({
-      type: "upload",
-      prefix: "uploads",
-    });
+    // Fetch the file's details from Cloudinary using the public_id
+    const fileUrl = cloudinary.url(filename, { secure: true });
 
-    // Find the file by its filename
-    const file = resources.resources.find((resource) =>
-      resource.public_id.endsWith(filename.replace(/\.[^/.]+$/, ""))
-    );
-
-    if (!file) {
-      console.error("File not found:", filename);
-      return res.status(404).json({ message: "File not found." });
-    }
-
-    res.redirect(file.secure_url);
+    // Redirect the user to download the file from Cloudinary's URL
+    res.redirect(fileUrl);
   } catch (error) {
     console.error("Error fetching file from Cloudinary:", error.message);
-    res.status(500).json({ message: "Failed to download file." });
+    res.status(404).json({ message: "File not found on Cloudinary." });
   }
 });
 
