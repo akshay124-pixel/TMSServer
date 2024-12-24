@@ -100,17 +100,34 @@ router.get("/export", async (req, res) => {
     res.status(500).send("Error exporting tickets");
   }
 });
-// Download route
+
 // Download route
 router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params; // This should be the public_id of the file in Cloudinary.
 
   try {
-    // Fetch the file's details from Cloudinary using the public_id
+    // Generate the Cloudinary file URL
     const fileUrl = cloudinary.url(filename, { secure: true });
 
-    // Redirect the user to download the file from Cloudinary's URL
-    res.redirect(fileUrl);
+    // Fetch the file from Cloudinary
+    const response = await axios({
+      url: fileUrl, // Cloudinary file URL
+      method: "GET",
+      responseType: "stream", // Get the file as a stream
+    });
+
+    // Extract the original file name for the download prompt
+    const originalFilename = filename.split("/").pop();
+
+    // Set headers to force download
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${originalFilename}"`
+    );
+    res.setHeader("Content-Type", response.headers["content-type"]);
+
+    // Pipe the file stream to the response
+    response.data.pipe(res);
   } catch (error) {
     console.error("Error fetching file from Cloudinary:", error.message);
     res.status(404).json({ message: "File not found on Cloudinary." });
