@@ -102,12 +102,19 @@ router.get("/export", async (req, res) => {
 });
 
 // Download route
+// Download route
 router.get("/download/:filename", async (req, res) => {
-  const { filename } = req.params; // This should be the public_id of the file in Cloudinary.
+  const { filename } = req.params;
 
   try {
+    // Decode the filename parameter
+    const decodedFilename = decodeURIComponent(filename);
+
+    // Extract only the Cloudinary public_id (remove directory and file extension)
+    const publicId = decodedFilename.replace(/^uploads\//, "").split(".")[0];
+
     // Generate the Cloudinary file URL
-    const fileUrl = cloudinary.url(filename, { secure: true });
+    const fileUrl = cloudinary.url(publicId, { secure: true });
 
     // Fetch the file from Cloudinary
     const response = await axios({
@@ -117,7 +124,7 @@ router.get("/download/:filename", async (req, res) => {
     });
 
     // Extract the original file name for the download prompt
-    const originalFilename = filename.split("/").pop();
+    const originalFilename = publicId.split("/").pop() + ".jpg"; // Adjust extension if needed
 
     // Set headers to force download
     res.setHeader(
