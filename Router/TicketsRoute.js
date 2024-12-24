@@ -46,9 +46,16 @@ router.get("/export", async (req, res) => {
 
     // Format createdAt field in each ticket
     const formattedTickets = tickets.map((ticket) => {
+      const date = new Date(ticket.createdAt);
+      const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(
+        date.getMonth() + 1
+      )
+        .toString()
+        .padStart(2, "0")}/${date.getFullYear()}`; // Format as DD/MM/YYYY
+
       return {
         ...ticket._doc, // Spread other fields
-        createdAt: new Date(ticket.createdAt).toLocaleDateString("en-US"), // Format to MM/DD/YYYY
+        createdAt: formattedDate, // Ensure createdAt is plain DD/MM/YYYY
       };
     });
 
