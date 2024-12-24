@@ -45,6 +45,7 @@ router.get("/export", async (req, res) => {
     const tickets = await Ticket.find();
 
     const fields = [
+      "date",
       "trackingId",
       "customerName",
       "serialNumber",
