@@ -10,13 +10,24 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { Parser } = require("json2csv");
-// Multer storage configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Ensure this directory exists
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Append timestamp to the filename
+const { v2: cloudinary } = require("cloudinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+// CLOUDNAIRY
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: "dslfwgnye", // Replace with your Cloudinary cloud_name
+  api_key: "233314761467148", // Replace with your Cloudinary api_key
+  api_secret: "bhFvGyNbm6PiqjxGZYplH89yVM4", // Replace with your Cloudinary api_secret
+});
+
+// Cloudinary storage configuration
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "uploads",
+    allowed_formats: ["jpeg", "jpg", "png", "gif", "pdf"],
+    resource_type: "auto",
   },
 });
 
@@ -24,7 +35,6 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
-    // Allowed file types: images and PDFs
     const fileTypes = /jpeg|jpg|png|gif|pdf/;
     const extName = fileTypes.test(
       path.extname(file.originalname).toLowerCase()
