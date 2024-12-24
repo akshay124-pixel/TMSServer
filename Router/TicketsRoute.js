@@ -16,9 +16,9 @@ const { CloudinaryStorage } = require("multer-storage-cloudinary");
 // CLOUDNAIRY
 // Cloudinary configuration
 cloudinary.config({
-  cloud_name: "dslfwgnye", // Replace with your Cloudinary cloud_name
-  api_key: "233314761467148", // Replace with your Cloudinary api_key
-  api_secret: "bhFvGyNbm6PiqjxGZYplH89yVM4", // Replace with your Cloudinary api_secret
+  cloud_name: "dslfwgnye",
+  api_key: "233314761467148",
+  api_secret: "bhFvGyNbm6PiqjxGZYplH89yVM4",
 });
 
 // Cloudinary storage configuration
@@ -33,7 +33,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const fileTypes = /jpeg|jpg|png|gif|pdf/;
     const extName = fileTypes.test(
@@ -52,7 +52,7 @@ const upload = multer({
 // Exports
 router.get("/export", async (req, res) => {
   try {
-    const tickets = await Ticket.find(); // Fetch all tickets from DB
+    const tickets = await Ticket.find();
 
     // Format createdAt field in each ticket
     const formattedTickets = tickets.map((ticket) => {
@@ -61,11 +61,11 @@ router.get("/export", async (req, res) => {
         date.getMonth() + 1
       )
         .toString()
-        .padStart(2, "0")}/${date.getFullYear()}`; // Format as DD/MM/YYYY
+        .padStart(2, "0")}/${date.getFullYear()}`;
 
       return {
-        ...ticket._doc, // Spread other fields
-        createdAt: formattedDate, // Ensure createdAt is plain DD/MM/YYYY
+        ...ticket._doc,
+        createdAt: formattedDate,
       };
     });
 
@@ -90,7 +90,7 @@ router.get("/export", async (req, res) => {
     ];
 
     const json2csvParser = new Parser({ fields });
-    const csv = json2csvParser.parse(formattedTickets); // Use formattedTickets here
+    const csv = json2csvParser.parse(formattedTickets);
 
     res.header("Content-Type", "text/csv");
     res.attachment("tickets.csv");
