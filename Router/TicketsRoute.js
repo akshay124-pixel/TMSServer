@@ -101,7 +101,6 @@ router.get("/export", async (req, res) => {
   }
 });
 
-// Download route
 router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params;
 
@@ -110,14 +109,17 @@ router.get("/download/:filename", async (req, res) => {
     const decodedFilename = decodeURIComponent(filename);
     console.log("Decoded Filename:", decodedFilename);
 
-    // Extract the Cloudinary public ID (strip folder and extension)
+    // Extract the Cloudinary public ID and file extension
+    const fileExtension = decodedFilename.split(".").pop();
     const publicId = decodedFilename.replace(/^uploads\//, "").split(".")[0];
     console.log("Extracted Public ID:", publicId);
+    console.log("Extracted File Extension:", fileExtension);
 
-    // Construct the Cloudinary URL directly without forcing the file format
+    // Construct the Cloudinary URL correctly with file extension
     const fileUrl = cloudinary.url(publicId, {
       secure: true,
       resource_type: "auto", // Automatically detect file type (image, pdf, etc.)
+      format: fileExtension, // Ensure the correct format is appended
     });
 
     console.log("Generated Cloudinary URL:", fileUrl);
