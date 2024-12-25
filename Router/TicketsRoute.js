@@ -107,8 +107,12 @@ router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params;
 
   try {
+    // Decode the filename parameter
+    const decodedFilename = decodeURIComponent(filename);
+    console.log("Decoded Filename:", decodedFilename);
+
     // Cloudinary URL for downloading file (with secure: true for HTTPS)
-    const fileUrl = cloudinary.url(filename, {
+    const fileUrl = cloudinary.url(decodedFilename, {
       secure: true,
       resource_type: "auto", // Automatically detects file type (image, pdf, etc.)
     });
@@ -121,11 +125,11 @@ router.get("/download/:filename", async (req, res) => {
       responseType: "stream",
     });
 
-    // Determine file extension to set the correct Content-Disposition header
-    const contentDisposition = `attachment; filename="${filename}"`;
-
     // Set headers to force file download
-    res.setHeader("Content-Disposition", contentDisposition);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${decodedFilename}"`
+    );
     res.setHeader("Content-Type", response.headers["content-type"]);
 
     // Pipe the file stream to the response
