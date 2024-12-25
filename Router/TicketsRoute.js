@@ -108,53 +108,38 @@ router.get("/download/:publicId", async (req, res) => {
   try {
     console.log("Received Public ID:", publicId);
 
-    // Decode the public ID to handle any encoded characters
     const decodedPublicId = decodeURIComponent(publicId);
     console.log("Decoded Public ID:", decodedPublicId);
 
-    // Generate a secure Cloudinary URL
     const fileUrl = cloudinary.url(decodedPublicId, {
       secure: true,
-      resource_type: "auto", // Automatically determines file type
+      resource_type: "auto",
     });
-    console.log("Generated Cloudinary File URL:", fileUrl);
+    console.log("Generated Cloudinary URL:", fileUrl);
 
-    // Fetch the file from Cloudinary
     const response = await axios({
       url: fileUrl,
       method: "GET",
       responseType: "stream",
     });
 
-    // Log the response status and headers
     console.log("Axios Response Status:", response.status);
-    console.log("Axios Response Headers:", response.headers);
 
-    // Extract the original filename from the publicId
     const originalFilename = decodedPublicId.split("/").pop();
-
-    // Set headers for file download
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${originalFilename}"`
     );
     res.setHeader("Content-Type", response.headers["content-type"]);
-
-    // Pipe the file stream to the response
     response.data.pipe(res);
   } catch (error) {
-    console.error("Error downloading file:", error.message);
+    console.error("Error Details:", error.message);
 
     if (error.response) {
-      console.log("Axios Error Response:", error.response.data);
-      console.log("Axios Error Status:", error.response.status);
+      console.log("Error Response from Axios:", error.response.data);
     }
 
-    if (error.response && error.response.status === 404) {
-      res.status(404).json({ message: "File not found on Cloudinary." });
-    } else {
-      res.status(500).json({ message: "An unexpected error occurred." });
-    }
+    res.status(500).json({ message: "An unexpected error occurred." });
   }
 });
 
