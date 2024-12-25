@@ -107,12 +107,8 @@ router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params;
 
   try {
-    // Decode the filename parameter
-    const decodedFilename = decodeURIComponent(filename);
-    console.log("Decoded Filename:", decodedFilename);
-
     // Cloudinary URL for downloading file (with secure: true for HTTPS)
-    const fileUrl = cloudinary.url(decodedFilename, {
+    const fileUrl = cloudinary.url(filename, {
       secure: true,
       resource_type: "auto", // Automatically detects file type (image, pdf, etc.)
     });
@@ -126,8 +122,7 @@ router.get("/download/:filename", async (req, res) => {
     });
 
     // Determine file extension to set the correct Content-Disposition header
-    const fileExtension = decodedFilename.split(".").pop().toLowerCase();
-    const contentDisposition = `attachment; filename="${decodedFilename}"`;
+    const contentDisposition = `attachment; filename="${filename}"`;
 
     // Set headers to force file download
     res.setHeader("Content-Disposition", contentDisposition);
@@ -140,6 +135,7 @@ router.get("/download/:filename", async (req, res) => {
     res.status(404).json({ message: "File not found on Cloudinary." });
   }
 });
+
 // Route to create a new ticket
 router.post(
   "/create",
