@@ -108,37 +108,51 @@ router.get("/download/:publicId", async (req, res) => {
   try {
     console.log("Received Public ID:", publicId);
 
+    // Decode the public ID
     const decodedPublicId = decodeURIComponent(publicId);
     console.log("Decoded Public ID:", decodedPublicId);
 
+    // Generate Cloudinary URL
     const fileUrl = cloudinary.url(decodedPublicId, {
       secure: true,
-      resource_type: "auto",
+      resource_type: "auto", // Automatically determine the resource type
     });
     console.log("Generated Cloudinary URL:", fileUrl);
 
+    // Fetch the file from Cloudinary
     const response = await axios({
       url: fileUrl,
       method: "GET",
-      responseType: "stream",
+      responseType: "stream", // Stream the response directly
     });
 
     console.log("Axios Response Status:", response.status);
 
+    // Extract the file name from the decoded public ID
     const originalFilename = decodedPublicId.split("/").pop();
+    console.log("Original Filename:", originalFilename);
+
+    // Set appropriate headers for file download
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${originalFilename}"`
     );
     res.setHeader("Content-Type", response.headers["content-type"]);
+
+    // Pipe the file stream to the client
     response.data.pipe(res);
   } catch (error) {
-    console.error("Error Details:", error.message);
+    console.error("Error Occurred:", error.message);
 
+    // Check for Axios-specific error
     if (error.response) {
-      console.log("Error Response from Axios:", error.response.data);
+      console.log("Axios Error Response:", error.response.data);
+      return res
+        .status(500)
+        .json({ message: "Failed to fetch the file from Cloudinary." });
     }
 
+    // Handle other errors
     res.status(500).json({ message: "An unexpected error occurred." });
   }
 });
