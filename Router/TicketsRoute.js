@@ -108,18 +108,18 @@ router.get("/download/:filename", async (req, res) => {
   try {
     // Decode the filename to avoid issues with special characters
     const decodedFilename = decodeURIComponent(filename);
+    console.log("Decoded Filename:", decodedFilename);
 
     // Extract the Cloudinary public ID (strip folder and extension)
     const publicId = decodedFilename.replace(/^uploads\//, "").split(".")[0];
-
-    console.log("Public ID:", publicId);
+    console.log("Extracted Public ID:", publicId);
 
     // Generate Cloudinary file URL
     const fileUrl = cloudinary.url(publicId, {
       secure: true,
       resource_type: "auto",
     });
-    console.log("Cloudinary File URL:", fileUrl);
+    console.log("Generated Cloudinary URL:", fileUrl);
 
     // Fetch the file stream from Cloudinary using axios
     const response = await axios({
@@ -128,9 +128,19 @@ router.get("/download/:filename", async (req, res) => {
       responseType: "stream", // Stream the file
     });
 
-    // Set headers for file download
-    const originalFilename = decodedFilename.split("/").pop(); // Get the filename with extension
+    // Check if response is valid
+    if (!response || !response.data) {
+      console.error("No file data received from Cloudinary.");
+      return res
+        .status(404)
+        .json({ message: "Failed to fetch file from Cloudinary." });
+    }
 
+    // Extract the original file name for the download prompt
+    const originalFilename = decodedFilename.split("/").pop();
+    console.log("Original Filename for Download:", originalFilename);
+
+    // Set headers for file download
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${originalFilename}"`
@@ -141,10 +151,11 @@ router.get("/download/:filename", async (req, res) => {
     response.data.pipe(res);
   } catch (error) {
     console.error("Error fetching file from Cloudinary:", error.message);
-    res.status(500).json({ message: "Failed to fetch file from Cloudinary." });
+    return res
+      .status(500)
+      .json({ message: "Failed to fetch file from Cloudinary." });
   }
 });
-
 // Route to create a new ticket
 router.post(
   "/create",
