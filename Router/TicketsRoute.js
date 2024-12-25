@@ -102,41 +102,44 @@ router.get("/export", async (req, res) => {
 });
 
 // Download route
-// Download route
-router.get("/download/:filename", async (req, res) => {
-  const { filename } = req.params;
+router.get("/download/:publicId", async (req, res) => {
+  const { publicId } = req.params;
 
   try {
-    // Decode the filename parameter
-    const decodedFilename = decodeURIComponent(filename);
-    console.log("Decoded Filename:", decodedFilename);
+    console.log("Public ID for download:", publicId);
 
-    // Cloudinary URL for downloading file (with secure: true for HTTPS)
-    const fileUrl = cloudinary.url(decodedFilename, {
+    // Generate a Cloudinary URL for the resource
+    const fileUrl = cloudinary.url(publicId, {
       secure: true,
-      resource_type: "auto", // Automatically detects file type (image, pdf, etc.)
+      resource_type: "auto", // Ensure Cloudinary determines type (image, pdf, etc.)
     });
-    console.log("Generated Cloudinary URL:", fileUrl);
+    console.log("Generated File URL:", fileUrl);
 
-    // Fetch the file stream from Cloudinary using axios
+    // Fetch the file from Cloudinary as a stream
     const response = await axios({
       url: fileUrl,
       method: "GET",
       responseType: "stream",
     });
 
-    // Set headers to force file download
+    // Set headers for download
+    const originalFilename = publicId.split("/").pop(); // Extract filename from public_id
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${decodedFilename}"`
+      `attachment; filename="${originalFilename}"`
     );
     res.setHeader("Content-Type", response.headers["content-type"]);
 
     // Pipe the file stream to the response
     response.data.pipe(res);
   } catch (error) {
-    console.error("Error fetching file from Cloudinary:", error.message);
-    res.status(404).json({ message: "File not found on Cloudinary." });
+    console.error("Error downloading file from Cloudinary:", error.message);
+
+    if (error.response && error.response.status === 404) {
+      res.status(404).json({ message: "File not found on Cloudinary." });
+    } else {
+      res.status(500).json({ message: "An unexpected error occurred." });
+    }
   }
 });
 
@@ -160,7 +163,7 @@ router.post(
         city,
         state,
       } = req.body;
-      const billImage = req.file.path;
+      const { path, filename } = req.file;
       const trackingId = generateTrackingId();
 
       const ticket = new Ticket({
@@ -169,7 +172,7 @@ router.post(
         serialNumber,
         description,
         contactNumber,
-        billImage,
+        billImage: filename,
         email,
         productType,
         modelType,
