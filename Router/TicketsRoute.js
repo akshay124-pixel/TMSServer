@@ -107,32 +107,28 @@ router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params;
 
   try {
-    // Decode and sanitize the filename parameter
+    // Decode the filename parameter (it could be URL-encoded)
     const decodedFilename = decodeURIComponent(filename);
     console.log("Decoded Filename:", decodedFilename);
 
-    // Extract public_id (e.g., remove "uploads/" and file extension)
-    const publicId = decodedFilename
-      .replace(/^uploads\//, "")
-      .replace(/\.\w+$/, ""); // Removes extension like .jpg
-    console.log("Public ID:", publicId);
-
-    // Generate Cloudinary URL for download
-    const fileUrl = cloudinary.url(publicId, { secure: true });
+    // Generate Cloudinary URL (for download, we don't need to extract publicId manually)
+    const fileUrl = cloudinary.url(decodedFilename, {
+      secure: true,
+      resource_type: "auto", // This makes sure we don't need to specify file type manually (e.g., image, video)
+    });
     console.log("Generated Cloudinary URL:", fileUrl);
 
-    // Fetch the file stream from Cloudinary
+    // Fetch the file stream from Cloudinary using the URL
     const response = await axios({
-      url: fileUrl, // Cloudinary URL
+      url: fileUrl,
       method: "GET",
-      responseType: "stream", // To handle the file as stream
+      responseType: "stream",
     });
 
     // Set headers to force file download
-    const originalFilename = publicId.split("/").pop() + ".jpg"; // Ensure extension matches
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${originalFilename}"`
+      `attachment; filename="${decodedFilename}"`
     );
     res.setHeader("Content-Type", response.headers["content-type"]);
 
@@ -140,12 +136,7 @@ router.get("/download/:filename", async (req, res) => {
     response.data.pipe(res);
   } catch (error) {
     console.error("Error fetching file from Cloudinary:", error.message);
-
-    if (error.response && error.response.status === 404) {
-      res.status(404).json({ message: "File not found on Cloudinary." });
-    } else {
-      res.status(500).json({ message: "An unexpected error occurred." });
-    }
+    res.status(404).json({ message: "File not found on Cloudinary." });
   }
 });
 
