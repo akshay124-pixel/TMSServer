@@ -109,14 +109,17 @@ router.get("/download/:filename", async (req, res) => {
   try {
     // Decode and sanitize the filename parameter
     const decodedFilename = decodeURIComponent(filename);
+    console.log("Decoded Filename:", decodedFilename);
 
     // Extract public_id (e.g., remove "uploads/" and file extension)
     const publicId = decodedFilename
       .replace(/^uploads\//, "")
       .replace(/\.\w+$/, ""); // Removes extension like .jpg
+    console.log("Public ID:", publicId);
 
     // Generate Cloudinary URL for download
     const fileUrl = cloudinary.url(publicId, { secure: true });
+    console.log("Generated Cloudinary URL:", fileUrl);
 
     // Fetch the file stream from Cloudinary
     const response = await axios({
@@ -138,8 +141,11 @@ router.get("/download/:filename", async (req, res) => {
   } catch (error) {
     console.error("Error fetching file from Cloudinary:", error.message);
 
-    // Handle Cloudinary or axios errors
-    res.status(404).json({ message: "File not found on Cloudinary." });
+    if (error.response && error.response.status === 404) {
+      res.status(404).json({ message: "File not found on Cloudinary." });
+    } else {
+      res.status(500).json({ message: "An unexpected error occurred." });
+    }
   }
 });
 
