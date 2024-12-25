@@ -12,7 +12,7 @@ const fs = require("fs");
 const { Parser } = require("json2csv");
 const { v2: cloudinary } = require("cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
-const axios = require("axios");
+
 // CLOUDNAIRY
 // Cloudinary configuration
 cloudinary.config({
@@ -102,52 +102,45 @@ router.get("/export", async (req, res) => {
 });
 
 // Download route
-router.get("/download/:publicId", async (req, res) => {
+// Download route
+router.get("/download/:filename", async (req, res) => {
+  const { filename } = req.params;
+
   try {
-    const { publicId } = req.params;
-    console.log("Received Public ID:", publicId);
+    // Decode the filename parameter
+    const decodedFilename = decodeURIComponent(filename);
 
-    // Decode the publicId for safety
-    const decodedPublicId = decodeURIComponent(publicId);
-    console.log("Decoded Public ID:", decodedPublicId);
+    // Extract only the Cloudinary public_id (remove directory and file extension)
+    const publicId = decodedFilename.replace(/^uploads\//, "").split(".")[0];
 
-    // Fetch the resource details from Cloudinary
-    const resource = await cloudinary.api.resource(decodedPublicId);
-    console.log("Cloudinary Resource Details:", resource);
+    // Generate the Cloudinary file URL
+    const fileUrl = cloudinary.url(publicId, { secure: true });
 
-    // Get the secure_url from Cloudinary response
-    const fileUrl = resource.secure_url;
-    console.log("Cloudinary File URL:", fileUrl);
-
-    // Stream the file to the client
+    // Fetch the file from Cloudinary
     const response = await axios({
-      url: fileUrl,
+      url: fileUrl, // Cloudinary file URL
       method: "GET",
-      responseType: "stream",
+      responseType: "stream", // Get the file as a stream
     });
 
-    // Extract file name from the URL
-    const originalFilename = decodedPublicId.split("/").pop();
+    // Extract the original file name for the download prompt
+    const originalFilename = publicId.split("/").pop() + ".jpg"; // Adjust extension if needed
 
-    // Set headers and pipe the response
+    // Set headers to force download
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${originalFilename}"`
     );
     res.setHeader("Content-Type", response.headers["content-type"]);
+
+    // Pipe the file stream to the response
     response.data.pipe(res);
   } catch (error) {
-    console.error("Error occurred while fetching file:", error.message);
-
-    if (error.response) {
-      console.log("Cloudinary API Error:", error.response.data);
-    }
-
-    res
-      .status(500)
-      .json({ message: "Failed to fetch the file from Cloudinary." });
+    console.error("Error fetching file from Cloudinary:", error.message);
+    res.status(404).json({ message: "File not found on Cloudinary." });
   }
 });
+
 // Route to create a new ticket
 router.post(
   "/create",
@@ -168,7 +161,7 @@ router.post(
         city,
         state,
       } = req.body;
-      const { path, filename } = req.file;
+      const billImage = req.file.path;
       const trackingId = generateTrackingId();
 
       const ticket = new Ticket({
@@ -177,7 +170,7 @@ router.post(
         serialNumber,
         description,
         contactNumber,
-        billImage: filename,
+        billImage,
         email,
         productType,
         modelType,
