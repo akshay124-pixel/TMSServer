@@ -107,18 +107,18 @@ router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params;
 
   try {
-    // Decode the filename parameter (it could be URL-encoded)
+    // Decode the filename parameter
     const decodedFilename = decodeURIComponent(filename);
     console.log("Decoded Filename:", decodedFilename);
 
-    // Generate Cloudinary URL (for download, we don't need to extract publicId manually)
+    // Cloudinary URL for downloading file (with secure: true for HTTPS)
     const fileUrl = cloudinary.url(decodedFilename, {
       secure: true,
-      resource_type: "auto", // This makes sure we don't need to specify file type manually (e.g., image, video)
+      resource_type: "auto", // This makes sure Cloudinary determines the resource type
     });
     console.log("Generated Cloudinary URL:", fileUrl);
 
-    // Fetch the file stream from Cloudinary using the URL
+    // Fetch the file stream from Cloudinary using axios
     const response = await axios({
       url: fileUrl,
       method: "GET",
@@ -132,7 +132,7 @@ router.get("/download/:filename", async (req, res) => {
     );
     res.setHeader("Content-Type", response.headers["content-type"]);
 
-    // Pipe file stream to client
+    // Pipe the file stream to the response
     response.data.pipe(res);
   } catch (error) {
     console.error("Error fetching file from Cloudinary:", error.message);
