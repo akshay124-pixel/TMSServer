@@ -106,24 +106,34 @@ router.get("/download/:publicId", async (req, res) => {
   const { publicId } = req.params;
 
   try {
-    console.log("Public ID for download:", publicId);
+    console.log("Received Public ID:", publicId);
 
-    // Generate a Cloudinary URL for the resource
-    const fileUrl = cloudinary.url(publicId, {
+    // Decode the public ID to handle any encoded characters
+    const decodedPublicId = decodeURIComponent(publicId);
+    console.log("Decoded Public ID:", decodedPublicId);
+
+    // Generate a secure Cloudinary URL
+    const fileUrl = cloudinary.url(decodedPublicId, {
       secure: true,
-      resource_type: "auto", // Ensure Cloudinary determines type (image, pdf, etc.)
+      resource_type: "auto", // Automatically determines file type
     });
-    console.log("Generated File URL:", fileUrl);
+    console.log("Generated Cloudinary File URL:", fileUrl);
 
-    // Fetch the file from Cloudinary as a stream
+    // Fetch the file from Cloudinary
     const response = await axios({
       url: fileUrl,
       method: "GET",
       responseType: "stream",
     });
 
-    // Set headers for download
-    const originalFilename = publicId.split("/").pop(); // Extract filename from public_id
+    // Log the response status and headers
+    console.log("Axios Response Status:", response.status);
+    console.log("Axios Response Headers:", response.headers);
+
+    // Extract the original filename from the publicId
+    const originalFilename = decodedPublicId.split("/").pop();
+
+    // Set headers for file download
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${originalFilename}"`
@@ -133,7 +143,12 @@ router.get("/download/:publicId", async (req, res) => {
     // Pipe the file stream to the response
     response.data.pipe(res);
   } catch (error) {
-    console.error("Error downloading file from Cloudinary:", error.message);
+    console.error("Error downloading file:", error.message);
+
+    if (error.response) {
+      console.log("Axios Error Response:", error.response.data);
+      console.log("Axios Error Status:", error.response.status);
+    }
 
     if (error.response && error.response.status === 404) {
       res.status(404).json({ message: "File not found on Cloudinary." });
