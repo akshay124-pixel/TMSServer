@@ -107,36 +107,38 @@ router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params;
 
   try {
-    // Decode the filename parameter
+    // Decode and sanitize the filename parameter
     const decodedFilename = decodeURIComponent(filename);
 
-    // Extract only the Cloudinary public_id (remove directory and file extension)
-    const publicId = decodedFilename.replace(/^uploads\//, "").split(".")[0];
+    // Extract public_id (e.g., remove "uploads/" and file extension)
+    const publicId = decodedFilename
+      .replace(/^uploads\//, "")
+      .replace(/\.\w+$/, ""); // Removes extension like .jpg
 
-    // Generate the Cloudinary file URL
+    // Generate Cloudinary URL for download
     const fileUrl = cloudinary.url(publicId, { secure: true });
 
-    // Fetch the file from Cloudinary
+    // Fetch the file stream from Cloudinary
     const response = await axios({
-      url: fileUrl, // Cloudinary file URL
+      url: fileUrl, // Cloudinary URL
       method: "GET",
-      responseType: "stream", // Get the file as a stream
+      responseType: "stream", // To handle the file as stream
     });
 
-    // Extract the original file name for the download prompt
-    const originalFilename = publicId.split("/").pop() + ".jpg"; // Adjust extension if needed
-
-    // Set headers to force download
+    // Set headers to force file download
+    const originalFilename = publicId.split("/").pop() + ".jpg"; // Ensure extension matches
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${originalFilename}"`
     );
     res.setHeader("Content-Type", response.headers["content-type"]);
 
-    // Pipe the file stream to the response
+    // Pipe file stream to client
     response.data.pipe(res);
   } catch (error) {
     console.error("Error fetching file from Cloudinary:", error.message);
+
+    // Handle Cloudinary or axios errors
     res.status(404).json({ message: "File not found on Cloudinary." });
   }
 });
