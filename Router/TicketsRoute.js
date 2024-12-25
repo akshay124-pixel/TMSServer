@@ -102,31 +102,35 @@ router.get("/export", async (req, res) => {
 });
 
 // Download route
-// Download route
 router.get("/download/:filename", async (req, res) => {
   const { filename } = req.params;
 
   try {
-    // Decode the filename parameter
+    // Decode the filename to avoid issues with special characters
     const decodedFilename = decodeURIComponent(filename);
 
-    // Extract only the Cloudinary public_id (remove directory and file extension)
+    // Extract the Cloudinary public ID (strip folder and extension)
     const publicId = decodedFilename.replace(/^uploads\//, "").split(".")[0];
 
-    // Generate the Cloudinary file URL
-    const fileUrl = cloudinary.url(publicId, { secure: true });
+    console.log("Public ID:", publicId);
 
-    // Fetch the file from Cloudinary
+    // Generate Cloudinary file URL
+    const fileUrl = cloudinary.url(publicId, {
+      secure: true,
+      resource_type: "auto",
+    });
+    console.log("Cloudinary File URL:", fileUrl);
+
+    // Fetch the file stream from Cloudinary using axios
     const response = await axios({
-      url: fileUrl, // Cloudinary file URL
+      url: fileUrl,
       method: "GET",
-      responseType: "stream", // Get the file as a stream
+      responseType: "stream", // Stream the file
     });
 
-    // Extract the original file name for the download prompt
-    const originalFilename = publicId.split("/").pop() + ".jpg"; // Adjust extension if needed
+    // Set headers for file download
+    const originalFilename = decodedFilename.split("/").pop(); // Get the filename with extension
 
-    // Set headers to force download
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${originalFilename}"`
@@ -137,7 +141,7 @@ router.get("/download/:filename", async (req, res) => {
     response.data.pipe(res);
   } catch (error) {
     console.error("Error fetching file from Cloudinary:", error.message);
-    res.status(404).json({ message: "File not found on Cloudinary." });
+    res.status(500).json({ message: "Failed to fetch file from Cloudinary." });
   }
 });
 
