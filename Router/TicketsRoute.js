@@ -114,11 +114,14 @@ router.get("/download/:filename", async (req, res) => {
     const publicId = decodedFilename.replace(/^uploads\//, "").split(".")[0];
     console.log("Extracted Public ID:", publicId);
 
-    // Generate Cloudinary file URL
-    const fileUrl = cloudinary.url(publicId, {
+    // Dynamically handle file extension
+    const fileExtension = decodedFilename.split(".").pop();
+    const fileUrl = cloudinary.url(decodedFilename, {
       secure: true,
       resource_type: "auto",
+      format: fileExtension, // Correct the file format dynamically
     });
+
     console.log("Generated Cloudinary URL:", fileUrl);
 
     // Fetch the file stream from Cloudinary using axios
@@ -156,6 +159,7 @@ router.get("/download/:filename", async (req, res) => {
       .json({ message: "Failed to fetch file from Cloudinary." });
   }
 });
+
 // Route to create a new ticket
 router.post(
   "/create",
