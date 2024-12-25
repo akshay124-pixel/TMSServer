@@ -11,7 +11,7 @@ const path = require("path");
 const fs = require("fs");
 const { Parser } = require("json2csv");
 ("multer-storage-cloudinary");
-const axios = require("axios");
+
 // Multer storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
