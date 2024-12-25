@@ -10,32 +10,24 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { Parser } = require("json2csv");
-const { v2: cloudinary } = require("cloudinary");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+("multer-storage-cloudinary");
 const axios = require("axios");
-// CLOUDNAIRY
-// Cloudinary configuration
-cloudinary.config({
-  cloud_name: "dslfwgnye",
-  api_key: "233314761467148",
-  api_secret: "bhFvGyNbm6PiqjxGZYplH89yVM4",
-});
-
-// Cloudinary storage configuration
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "uploads",
-    allowed_formats: ["jpeg", "jpg", "png", "gif", "pdf"],
-    resource_type: "auto",
+// Multer storage configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Ensure this directory exists
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Append timestamp to the filename
   },
 });
 
+// Multer upload configuration
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
-    const fileTypes = /jpeg|jpg|png|gif|pdf/;
+    const fileTypes = /jpeg|jpg|png|gif/;
     const extName = fileTypes.test(
       path.extname(file.originalname).toLowerCase()
     );
@@ -44,9 +36,34 @@ const upload = multer({
     if (extName && mimeType) {
       cb(null, true);
     } else {
-      cb(new Error("Only images and PDFs are allowed!"));
+      cb(new Error("Only images are allowed!"));
     }
   },
+});
+
+// Download route
+router.get("/download/:filename", (req, res) => {
+  const { filename } = req.params;
+
+  // Define the uploads directory
+  const directoryPath = path.join(__dirname, "../uploads");
+  const filePath = path.join(directoryPath, filename);
+
+  // Check if the file exists
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error("File not found at:", filePath);
+      return res.status(404).json({ message: "File not found." });
+    }
+
+    // Send the file for download with a clean file name
+    res.download(filePath, filename, (err) => {
+      if (err) {
+        console.error("Error sending file:", err.message);
+        return res.status(500).json({ message: "Failed to download file." });
+      }
+    });
+  });
 });
 
 // Exports
@@ -98,65 +115,6 @@ router.get("/export", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Error exporting tickets");
-  }
-});
-
-router.get("/download/:filename", async (req, res) => {
-  const { filename } = req.params;
-
-  try {
-    // Decode the filename to avoid issues with special characters
-    const decodedFilename = decodeURIComponent(filename);
-    console.log("Decoded Filename:", decodedFilename);
-
-    // Extract the Cloudinary public ID and file extension
-    const fileExtension = decodedFilename.split(".").pop();
-    const publicId = decodedFilename.replace(/^uploads\//, "").split(".")[0];
-    console.log("Extracted Public ID:", publicId);
-    console.log("Extracted File Extension:", fileExtension);
-
-    // Construct the Cloudinary URL correctly with file extension
-    const fileUrl = cloudinary.url(publicId, {
-      secure: true,
-      resource_type: "auto", // Automatically detect file type (image, pdf, etc.)
-      format: fileExtension, // Ensure the correct format is appended
-    });
-
-    console.log("Generated Cloudinary URL:", fileUrl);
-
-    // Fetch the file stream from Cloudinary using axios
-    const response = await axios({
-      url: fileUrl,
-      method: "GET",
-      responseType: "stream", // Stream the file
-    });
-
-    // Check if response is valid
-    if (!response || !response.data) {
-      console.error("No file data received from Cloudinary.");
-      return res
-        .status(404)
-        .json({ message: "Failed to fetch file from Cloudinary." });
-    }
-
-    // Extract the original file name for the download prompt
-    const originalFilename = decodedFilename.split("/").pop();
-    console.log("Original Filename for Download:", originalFilename);
-
-    // Set headers for file download
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${originalFilename}"`
-    );
-    res.setHeader("Content-Type", response.headers["content-type"]);
-
-    // Pipe the file stream to the response
-    response.data.pipe(res);
-  } catch (error) {
-    console.error("Error fetching file from Cloudinary:", error.message);
-    return res
-      .status(500)
-      .json({ message: "Failed to fetch file from Cloudinary." });
   }
 });
 
