@@ -103,60 +103,51 @@ router.get("/export", async (req, res) => {
 
 // Download route
 router.get("/download/:publicId", async (req, res) => {
-  const { publicId } = req.params;
-
   try {
+    const { publicId } = req.params;
     console.log("Received Public ID:", publicId);
 
-    // Decode the public ID
+    // Decode the publicId for safety
     const decodedPublicId = decodeURIComponent(publicId);
     console.log("Decoded Public ID:", decodedPublicId);
 
-    // Generate Cloudinary URL
-    const fileUrl = cloudinary.url(decodedPublicId, {
-      secure: true,
-      resource_type: "auto", // Automatically determine the resource type
-    });
-    console.log("Generated Cloudinary URL:", fileUrl);
+    // Fetch the resource details from Cloudinary
+    const resource = await cloudinary.api.resource(decodedPublicId);
+    console.log("Cloudinary Resource Details:", resource);
 
-    // Fetch the file from Cloudinary
+    // Get the secure_url from Cloudinary response
+    const fileUrl = resource.secure_url;
+    console.log("Cloudinary File URL:", fileUrl);
+
+    // Stream the file to the client
     const response = await axios({
       url: fileUrl,
       method: "GET",
-      responseType: "stream", // Stream the response directly
+      responseType: "stream",
     });
 
-    console.log("Axios Response Status:", response.status);
-
-    // Extract the file name from the decoded public ID
+    // Extract file name from the URL
     const originalFilename = decodedPublicId.split("/").pop();
-    console.log("Original Filename:", originalFilename);
 
-    // Set appropriate headers for file download
+    // Set headers and pipe the response
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${originalFilename}"`
     );
     res.setHeader("Content-Type", response.headers["content-type"]);
-
-    // Pipe the file stream to the client
     response.data.pipe(res);
   } catch (error) {
-    console.error("Error Occurred:", error.message);
+    console.error("Error occurred while fetching file:", error.message);
 
-    // Check for Axios-specific error
     if (error.response) {
-      console.log("Axios Error Response:", error.response.data);
-      return res
-        .status(500)
-        .json({ message: "Failed to fetch the file from Cloudinary." });
+      console.log("Cloudinary API Error:", error.response.data);
     }
 
-    // Handle other errors
-    res.status(500).json({ message: "An unexpected error occurred." });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch the file from Cloudinary." });
   }
 });
-
 // Route to create a new ticket
 router.post(
   "/create",
