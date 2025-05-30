@@ -9,7 +9,7 @@ function generateToken(user) {
     email: user.email,
     role: user.role, // Add the role in the payload
   };
-  return jwt.sign(payload, secretkey, { expiresIn: "1h" });
+  return jwt.sign(payload, secretkey, { expiresIn: "30d" });
 }
 
 const verifyToken = (req, res, next) => {
